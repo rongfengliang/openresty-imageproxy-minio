@@ -1,0 +1,27 @@
+version: "3"
+services: 
+  pdf-proxy: 
+    image: openresty/openresty:alpine
+    volumes:
+    - ./nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf
+    - ./cache:/opt/nginx/data/cache
+    ports: 
+    - "80:80"
+  minio: 
+    image: minio/minio
+    command: server /data
+    volumes: 
+    - "./data:/data"
+    ports: 
+    - "9000:9000"
+    environment:
+      - "MINIO_ACCESS_KEY=minio"
+      - "MINIO_SECRET_KEY=minio123"
+  imageproxy: 
+    image: willnorris/imageproxy
+    command: -addr 0.0.0.0:8080 -cache s3://us-east-1/demo/images?endpoint=minio:9000&disableSSL=1&s3ForcePathStyle=1 -userAgent "Mozilla/5.0 (iPad; U; CPU OS 4_3_3 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5"
+    environment:
+    - "AWS_ACCESS_KEY_ID=minio"
+    - "AWS_SECRET_KEY=minio123"
+    ports: 
+    - "8080:8080"
